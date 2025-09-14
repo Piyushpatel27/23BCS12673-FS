@@ -1,0 +1,529 @@
+<!-- Dynamic Product Filter with DOM Manipulation  
+Aim: To implement a dynamic product filtering system that updates displayed items based on user dropdown selection using JavaScript and DOM manipulation.
+
+Objectives:
+-Create a product dataset
+-Build filter dropdown UI
+-Implement filter logic using Array.prototype.filter()
+-Dynamically update the DOM
+-Add visual feedback (e.g., filtered results)
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Product Filter</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-align: center;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .filters-section {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            color: #555;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        select, input {
+            padding: 12px 15px;
+            font-size: 16px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            background: white;
+            transition: all 0.3s ease;
+            min-width: 150px;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .search-container {
+            position: relative;
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .search-container input {
+            width: 100%;
+            padding-left: 45px;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+            font-size: 18px;
+        }
+
+        .clear-filters {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            align-self: flex-end;
+        }
+
+        .clear-filters:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+        }
+
+        .results-info {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 18px;
+            color: #666;
+        }
+
+        .results-count {
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        #products-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 25px;
+            margin-top: 20px;
+        }
+
+        .product {
+            border: 2px solid transparent;
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            background: white;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            position: relative;
+            overflow: hidden;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.6s ease forwards;
+        }
+
+        .product::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: left 0.5s;
+        }
+
+        .product:hover::before {
+            left: 100%;
+        }
+
+        .product:hover {
+            transform: translateY(-10px) scale(1.02);
+            border-color:  #ee5a24;
+            box-shadow: 0 20px 40px rgba(102, 126, 234, 0.2);
+        }
+
+        .product.filtering-out {
+            animation: fadeOutDown 0.4s ease forwards;
+        }
+
+        .product h3 {
+            margin: 0 0 15px;
+            font-size: 1.4em;
+            color: #333;
+            position: relative;
+        }
+
+        .product .price {
+            font-size: 1.8em;
+            font-weight: bold;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 15px;
+        }
+
+        .product .category {
+            display: inline-block;
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+
+        .add-to-cart {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .add-to-cart:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .add-to-cart:active {
+            transform: translateY(0);
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+            font-size: 1.2em;
+        }
+
+        .no-results-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeOutDown {
+            to {
+                opacity: 0;
+                transform: translateY(20px) scale(0.95);
+            }
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .filters-section {
+                flex-direction: column;
+            }
+            
+            .filter-group {
+                width: 100%;
+            }
+            
+            select, input {
+                min-width: auto;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Product Filter</h1>
+        
+        <div class="filters-section">
+            <div class="filter-group">
+                <label for="category-filter">Category</label>
+                <select id="category-filter">
+                    <option value="">All Categories</option>
+                    <option value="electronics">Electronics</option>
+                    <option value="clothing">Clothing</option>
+                    <option value="accessories">Accessories</option>
+                    <option value="beauty">Beauty</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label for="price-filter">Price Range</label>
+                <select id="price-filter">
+                    <option value="">All Prices</option>
+                    <option value="0-50">$0 - $50</option>
+                    <option value="51-200">$51 - $200</option>
+                    <option value="201-500">$201 - $500</option>
+                    <option value="501+">$501+</option>
+                </select>
+            </div>
+            
+            <div class="filter-group search-container">
+                <label for="search-filter">Search Products</label>
+                <div style="position: relative;">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="search-filter" placeholder="Search by name...">
+                </div>
+            </div>
+            
+            <button class="clear-filters" onclick="clearAllFilters()">Clear All</button>
+        </div>
+        
+        <div class="results-info">
+            Showing <span class="results-count" id="results-count">7</span> products
+        </div>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Loading products...</p>
+        </div>
+        
+        <div id="products-container">
+            <!-- Products will be populated by JavaScript -->
+        </div>
+        
+        <div class="no-results" id="no-results" style="display: none;">
+            <div class="no-results-icon">😔</div>
+            <h3>No products found</h3>
+            <p>Try adjusting your filters or search terms</p>
+        </div>
+    </div>
+
+    <script>
+        // Product data
+        const products = [
+            { name: 'Laptop', price: 999, category: 'electronics' },
+            { name: 'Shirt', price: 25, category: 'clothing' },
+            { name: 'Headphones', price: 199, category: 'electronics' },
+            { name: 'Eyeliner', price: 299, category: 'beauty' },
+            { name: 'Smartphone', price: 699, category: 'electronics' },
+            { name: 'Jeans', price: 89, category: 'clothing' },
+            { name: 'Watch', price: 249, category: 'accessories' }
+        ];
+
+        let filteredProducts = [...products];
+        let filterTimeout;
+
+        // DOM elements
+        const productsContainer = document.getElementById('products-container');
+        const categoryFilter = document.getElementById('category-filter');
+        const priceFilter = document.getElementById('price-filter');
+        const searchFilter = document.getElementById('search-filter');
+        const resultsCount = document.getElementById('results-count');
+        const noResults = document.getElementById('no-results');
+        const loading = document.getElementById('loading');
+
+        // Event listeners
+        categoryFilter.addEventListener('change', debounceFilter);
+        priceFilter.addEventListener('change', debounceFilter);
+        searchFilter.addEventListener('input', debounceFilter);
+
+        // Debounce function for better performance
+        function debounceFilter() {
+            showLoading();
+            clearTimeout(filterTimeout);
+            filterTimeout = setTimeout(() => {
+                filterProducts();
+                hideLoading();
+            }, 300);
+        }
+
+        function showLoading() {
+            loading.style.display = 'block';
+            productsContainer.style.opacity = '0.5';
+        }
+
+        function hideLoading() {
+            loading.style.display = 'none';
+            productsContainer.style.opacity = '1';
+        }
+
+        // Filter products based on current filter values
+        function filterProducts() {
+            const categoryValue = categoryFilter.value.toLowerCase();
+            const priceValue = priceFilter.value;
+            const searchValue = searchFilter.value.toLowerCase().trim();
+
+            filteredProducts = products.filter(product => {
+                // Category filter
+                const categoryMatch = !categoryValue || product.category === categoryValue;
+                
+                // Price filter
+                let priceMatch = true;
+                if (priceValue) {
+                    const price = product.price;
+                    switch (priceValue) {
+                        case '0-50':
+                            priceMatch = price >= 0 && price <= 50;
+                            break;
+                        case '51-200':
+                            priceMatch = price >= 51 && price <= 200;
+                            break;
+                        case '201-500':
+                            priceMatch = price >= 201 && price <= 500;
+                            break;
+                        case '501+':
+                            priceMatch = price >= 501;
+                            break;
+                    }
+                }
+                
+                // Search filter
+                const searchMatch = !searchValue || product.name.toLowerCase().includes(searchValue);
+                
+                return categoryMatch && priceMatch && searchMatch;
+            });
+
+            renderProducts();
+            updateResultsCount();
+        }
+
+        // Render products to the DOM
+        function renderProducts() {
+            // Add fade out animation to existing products
+            const existingProducts = productsContainer.querySelectorAll('.product');
+            existingProducts.forEach(product => {
+                product.classList.add('filtering-out');
+            });
+
+            setTimeout(() => {
+                if (filteredProducts.length === 0) {
+                    productsContainer.innerHTML = '';
+                    noResults.style.display = 'block';
+                } else {
+                    noResults.style.display = 'none';
+                    productsContainer.innerHTML = filteredProducts.map((product, index) => `
+                        <div class="product" style="animation-delay: ${index * 0.1}s">
+                            <div class="category">${product.category}</div>
+                            <h3>${product.name}</h3>
+                            <div class="price">$${product.price}</div>
+                            <button class="add-to-cart" onclick="addToCart('${product.name}')">
+                                Add to Cart
+                            </button>
+                        </div>
+                    `).join('');
+                }
+            }, 200);
+        }
+
+        // Update results count
+        function updateResultsCount() {
+            resultsCount.textContent = filteredProducts.length;
+            resultsCount.style.animation = 'none';
+            setTimeout(() => {
+                resultsCount.style.animation = 'fadeInUp 0.5s ease';
+            }, 10);
+        }
+
+        // Clear all filters
+        function clearAllFilters() {
+            categoryFilter.value = '';
+            priceFilter.value = '';
+            searchFilter.value = '';
+            
+            // Add visual feedback
+            [categoryFilter, priceFilter, searchFilter].forEach(filter => {
+                filter.style.transform = 'scale(1.1)';
+                setTimeout(() => {
+                    filter.style.transform = 'scale(1)';
+                }, 200);
+            });
+            
+            filterProducts();
+        }
+
+        // Add to cart function
+        function addToCart(productName) {
+            // Find the button that was clicked
+            const buttons = document.querySelectorAll('.add-to-cart');
+            buttons.forEach(button => {
+                if (button.textContent.trim() === 'Add to Cart' && 
+                    button.closest('.product').querySelector('h3').textContent === productName) {
+                    button.textContent = 'Added! ✓';
+                    button.style.background = 'linear-gradient(45deg, #00b894, #00a085)';
+                    
+                    setTimeout(() => {
+                        button.textContent = 'Add to Cart';
+                        button.style.background = 'linear-gradient(45deg, #ff6b6b, #ee5a24)';
+                    }, 2000);
+                }
+            });
+        }
+
+        // Initial render
+        renderProducts();
+    </script>
+</body>
+</html>
