@@ -1,12 +1,12 @@
 # 23BCS12673-FS
 Full Stack repository
 
-npm create vite@latest 
-npm install -D tailwindcss postcss autoprefixer
-npx tailwindcss init -p
-npm install react-router-dom
-npm install lucide-react
-npm install @clerk/clerk-react
+#npm create vite@latest 
+#npm install -D tailwindcss postcss autoprefixer
+#npx tailwindcss init -p
+#npm install react-router-dom
+#npm install lucide-react
+#npm install @clerk/clerk-react
 
 Home Page:
 <img width="1900" height="863" alt="debate-home" src="https://github.com/user-attachments/assets/bd6bf988-bc2f-4da7-8cb4-a302c5c6b023" />
