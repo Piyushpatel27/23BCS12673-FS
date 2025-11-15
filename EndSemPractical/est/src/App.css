@@ -1,0 +1,23 @@
+/* Full background color */
+.full-bg {
+  background-color: #007bff;   /* Blue */
+  min-height: 100vh;
+  text-align: center;
+  padding-top: 40px;
+  color: white;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* Title */
+.title {
+  font-size: 3rem;
+  margin-bottom: 20px;
+  font-weight: 700;
+}
+
+/* Welcome text */
+.welcome-text {
+  font-size: 1.8rem;
+  margin: 10px 0;
+  font-weight: 600;
+}
